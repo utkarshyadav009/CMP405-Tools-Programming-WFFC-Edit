@@ -46,11 +46,19 @@ public:
 	void OnWindowSizeChanged(int width, int height);
 
 	//tool specific
+	inline void RebuildDisplayList() { m_RebuildDisplayList = true; }
+	inline bool ShouldRebuildDisplayList() { return m_RebuildDisplayList; }
 	void BuildDisplayList(std::vector<SceneObject> * SceneGraph); //note vector passed by reference 
 	void BuildDisplayChunk(ChunkObject *SceneChunk);
 	void SaveDisplayChunk(ChunkObject *SceneChunk);	//saves geometry et al
 	void ClearDisplayList();
 
+	//interation function 
+	int ObjectSelection();
+	std::vector<unsigned int> GetSelectedObjectID() { return m_SelectedObjectIDs; }
+	void AddChosenSelectionMenuIDs(std::vector<unsigned int> newSelectedObject);
+
+	//camera functions 
 	void SetCameraValues(float newMoveSpeed, float newCamRotationSpeed, float newMouseSensitivity);
 	inline float GetMoveSpeed() { return m_Camera.GetMoveSpeed(); }
 	inline float GetRotationSpeed() { return m_Camera.GetRotationSpeed(); }
@@ -63,7 +71,9 @@ public:
 	void NewAudioDevice();
 #endif
 public:
+	std::vector<unsigned int> m_SelectedObjectIDs;
 	float m_DeltaTime;
+	bool m_isEditingObjects;
 
 private:
 
@@ -83,6 +93,8 @@ private:
 	RECT m_screenDimensions;
 	Camera m_Camera;
 	HWND m_Window;
+
+	bool m_RebuildDisplayList;
 
 	//control variables
 	bool m_grid;							//grid rendering on / off

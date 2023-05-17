@@ -23,6 +23,8 @@ Game::Game()
 	//initial Settings
 	//modes
 	m_grid = false;
+
+    m_isEditingObjects = false;
 }
 
 Game::~Game()
@@ -39,6 +41,8 @@ Game::~Game()
 // Initialize the Direct3D resources required to run.
 void Game::Initialize(HWND window, int width, int height)
 {
+    m_Window = window;
+
     m_gamePad = std::make_unique<GamePad>();
 
     m_keyboard = std::make_unique<Keyboard>();
@@ -118,6 +122,17 @@ void Game::Update(DX::StepTimer const& timer)
     m_DeltaTime = float(timer.GetElapsedSeconds());
 
 
+    if (m_SelectedObjectIDs.size() == 0) {
+        m_isEditingObjects = false;
+
+    }
+
+    if (m_InputCommands.clearSelectedObjects) {
+        m_SelectedObjectIDs.clear();
+        m_InputCommands.clearSelectedObjects = false;
+    }
+
+
     // UpdateCamera
     m_Camera.UpdateViewport(m_screenDimensions);
     m_Camera.HandleInput(m_DeltaTime, m_InputCommands);
@@ -127,6 +142,25 @@ void Game::Update(DX::StepTimer const& timer)
     m_batchEffect->SetWorld(Matrix::Identity);
 	m_displayChunk.m_terrainEffect->SetView(m_view);
 	m_displayChunk.m_terrainEffect->SetWorld(Matrix::Identity);
+
+    if (m_InputCommands.mouseLeftDown) {
+        if (GetFocus() == GetParent(m_Window)) {
+            bool mouseWithinViewport = (m_InputCommands.mouseX > m_screenDimensions.left && m_InputCommands.mouseX < m_screenDimensions.right)
+                && (m_InputCommands.mouseY > m_screenDimensions.top && m_InputCommands.mouseY < m_screenDimensions.bottom);
+
+            if (mouseWithinViewport) {
+
+                if (m_InputCommands.ctrlDown == false)
+                    m_SelectedObjectIDs.clear();
+
+                unsigned int hitID = ObjectSelection();
+                if (std::find(m_SelectedObjectIDs.begin(), m_SelectedObjectIDs.end(), hitID) == m_SelectedObjectIDs.end() && hitID != -1) {
+
+                    m_SelectedObjectIDs.push_back(hitID);
+                }
+            }
+        }
+    }
 
 #ifdef DXTK_AUDIO
     m_audioTimerAcc -= (float)timer.GetElapsedSeconds();
@@ -345,73 +379,113 @@ void Game::BuildDisplayList(std::vector<SceneObject> * SceneGraph)
 
 	//for every item in the scenegraph
 	int numObjects = SceneGraph->size();
-	for (int i = 0; i < numObjects; i++)
-	{
-		
-		//create a temp display object that we will populate then append to the display list.
-		DisplayObject newDisplayObject;
-		
-		//load model
-		std::wstring modelwstr = StringToWCHART(SceneGraph->at(i).model_path);							//convect string to Wchar
-		newDisplayObject.m_model = Model::CreateFromCMO(device, modelwstr.c_str(), *m_fxFactory, true);	//get DXSDK to load model "False" for LH coordinate system (maya)
+    for (int i = 0; i < numObjects; i++)
+    {
+        if (!SceneGraph->at(i).editor_render)
+            continue;
+        //create a temp display object that we will populate then append to the display list.
+        DisplayObject newDisplayObject;
 
-		//Load Texture
-		std::wstring texturewstr = StringToWCHART(SceneGraph->at(i).tex_diffuse_path);								//convect string to Wchar
-		HRESULT rs;
-		rs = CreateDDSTextureFromFile(device, texturewstr.c_str(), nullptr, &newDisplayObject.m_texture_diffuse);	//load tex into Shader resource
+        //load model
+        std::wstring modelwstr = StringToWCHART(SceneGraph->at(i).model_path);							//convect string to Wchar
+        newDisplayObject.m_model = Model::CreateFromCMO(device, modelwstr.c_str(), *m_fxFactory, true);	//get DXSDK to load model "False" for LH coordinate system (maya)
 
-		//if texture fails.  load error default
-		if (rs)
-		{
-			CreateDDSTextureFromFile(device, L"database/data/Error.dds", nullptr, &newDisplayObject.m_texture_diffuse);	//load tex into Shader resource
-		}
+        //Load Texture
+        std::wstring texturewstr = StringToWCHART(SceneGraph->at(i).tex_diffuse_path);								//convect string to Wchar
+        HRESULT rs;
+        rs = CreateDDSTextureFromFile(device, texturewstr.c_str(), nullptr, &newDisplayObject.m_texture_diffuse);	//load tex into Shader resource
 
-		//apply new texture to models effect
-		newDisplayObject.m_model->UpdateEffects([&](IEffect* effect) //This uses a Lambda function,  if you dont understand it: Look it up.
-		{	
-			auto lights = dynamic_cast<BasicEffect*>(effect);
-			if (lights)
-			{
-				lights->SetTexture(newDisplayObject.m_texture_diffuse);			
-			}
-		});
+        //if texture fails.  load error default
+        if (rs)
+        {
+            CreateDDSTextureFromFile(device, L"database/data/Error.dds", nullptr, &newDisplayObject.m_texture_diffuse);	//load tex into Shader resource
+        }
 
-		//set position
-		newDisplayObject.m_position.x = SceneGraph->at(i).posX;
-		newDisplayObject.m_position.y = SceneGraph->at(i).posY;
-		newDisplayObject.m_position.z = SceneGraph->at(i).posZ;
-		
-		//setorientation
-		newDisplayObject.m_orientation.x = SceneGraph->at(i).rotX;
-		newDisplayObject.m_orientation.y = SceneGraph->at(i).rotY;
-		newDisplayObject.m_orientation.z = SceneGraph->at(i).rotZ;
+        //apply new texture to models effect
+        newDisplayObject.m_model->UpdateEffects([&](IEffect* effect) //This uses a Lambda function,  if you dont understand it: Look it up.
+            {
+                auto lights = dynamic_cast<BasicEffect*>(effect);
+                if (lights)
+                {
+                    lights->SetTexture(newDisplayObject.m_texture_diffuse);
+                }
+            });
 
-		//set scale
-		newDisplayObject.m_scale.x = SceneGraph->at(i).scaX;
-		newDisplayObject.m_scale.y = SceneGraph->at(i).scaY;
-		newDisplayObject.m_scale.z = SceneGraph->at(i).scaZ;
+        // USE ID FOR SELECTION, INDEX IS USELESS
+        newDisplayObject.m_ID = SceneGraph->at(i).ID;
 
-		//set wireframe / render flags
-		newDisplayObject.m_render		= SceneGraph->at(i).editor_render;
-		newDisplayObject.m_wireframe	= SceneGraph->at(i).editor_wireframe;
+        //set position
+        newDisplayObject.m_position.x = SceneGraph->at(i).posX;
+        newDisplayObject.m_position.y = SceneGraph->at(i).posY;
+        newDisplayObject.m_position.z = SceneGraph->at(i).posZ;
 
-		newDisplayObject.m_light_type		= SceneGraph->at(i).light_type;
-		newDisplayObject.m_light_diffuse_r	= SceneGraph->at(i).light_diffuse_r;
-		newDisplayObject.m_light_diffuse_g	= SceneGraph->at(i).light_diffuse_g;
-		newDisplayObject.m_light_diffuse_b	= SceneGraph->at(i).light_diffuse_b;
-		newDisplayObject.m_light_specular_r = SceneGraph->at(i).light_specular_r;
-		newDisplayObject.m_light_specular_g = SceneGraph->at(i).light_specular_g;
-		newDisplayObject.m_light_specular_b = SceneGraph->at(i).light_specular_b;
-		newDisplayObject.m_light_spot_cutoff = SceneGraph->at(i).light_spot_cutoff;
-		newDisplayObject.m_light_constant	= SceneGraph->at(i).light_constant;
-		newDisplayObject.m_light_linear		= SceneGraph->at(i).light_linear;
-		newDisplayObject.m_light_quadratic	= SceneGraph->at(i).light_quadratic;
-		
-		m_displayList.push_back(newDisplayObject);
-		
-	}
-		
-		
+        //setorientation
+        newDisplayObject.m_orientation.x = SceneGraph->at(i).rotX;
+        newDisplayObject.m_orientation.y = SceneGraph->at(i).rotY;
+        newDisplayObject.m_orientation.z = SceneGraph->at(i).rotZ;
+
+        //set scale
+        newDisplayObject.m_scale.x = SceneGraph->at(i).scaX;
+        newDisplayObject.m_scale.y = SceneGraph->at(i).scaY;
+        newDisplayObject.m_scale.z = SceneGraph->at(i).scaZ;
+
+        //set wireframe / render flags
+        newDisplayObject.m_render = SceneGraph->at(i).editor_render;
+        newDisplayObject.m_wireframe = SceneGraph->at(i).editor_wireframe;
+
+        newDisplayObject.m_light_type = SceneGraph->at(i).light_type;
+        newDisplayObject.m_light_diffuse_r = SceneGraph->at(i).light_diffuse_r;
+        newDisplayObject.m_light_diffuse_g = SceneGraph->at(i).light_diffuse_g;
+        newDisplayObject.m_light_diffuse_b = SceneGraph->at(i).light_diffuse_b;
+        newDisplayObject.m_light_specular_r = SceneGraph->at(i).light_specular_r;
+        newDisplayObject.m_light_specular_g = SceneGraph->at(i).light_specular_g;
+        newDisplayObject.m_light_specular_b = SceneGraph->at(i).light_specular_b;
+        newDisplayObject.m_light_spot_cutoff = SceneGraph->at(i).light_spot_cutoff;
+        newDisplayObject.m_light_constant = SceneGraph->at(i).light_constant;
+        newDisplayObject.m_light_linear = SceneGraph->at(i).light_linear;
+        newDisplayObject.m_light_quadratic = SceneGraph->at(i).light_quadratic;
+
+        m_displayList.push_back(newDisplayObject);
+
+        if (std::find(m_SelectedObjectIDs.begin(), m_SelectedObjectIDs.end(), SceneGraph->at(i).ID) != m_SelectedObjectIDs.end())
+        {
+            DisplayObject objectHighlight = newDisplayObject;
+
+            objectHighlight.m_ID = -1;
+            objectHighlight.m_wireframe = true;
+
+            objectHighlight.m_model->UpdateEffects([&](IEffect* effect)
+                {
+                    auto fog = dynamic_cast<IEffectFog*>(effect);
+
+                    if (fog) {
+                        fog->SetFogEnabled(true);
+                        fog->SetFogStart(0);
+                        fog->SetFogEnd(0); // 0,0 for one object distance irrelevant as incressed math will slow down the program;
+
+                        if (!m_isEditingObjects) {
+                            fog->SetFogColor(Colors::Goldenrod);
+                        }
+                        else {
+
+                            //if (m_isEditingPos) {
+                            //    fog->SetFogColor(Colors::DarkGreen);
+                            //}
+                            //if (m_isEditingRot) {
+                            //    fog->SetFogColor(Colors::DarkRed);
+                            //}
+                            //if (m_isEditingScale) {
+                            //    fog->SetFogColor(Colors::DarkBlue);
+                            //}
+                        }
+                    }
+                });
+
+            m_displayList.push_back(objectHighlight);
+
+        }
+    }
+    m_RebuildDisplayList = false;
 		
 }
 
@@ -428,6 +502,77 @@ void Game::BuildDisplayChunk(ChunkObject * SceneChunk)
 void Game::SaveDisplayChunk(ChunkObject * SceneChunk)
 {
 	m_displayChunk.SaveHeightMap();			//save heightmap to file.
+}
+
+int Game::ObjectSelection()
+{
+    RECT screenDims;
+    GetClientRect(m_Window, &screenDims);
+
+    int selection = -1;
+    float distinceFromCam = INFINITY, shortestDistance = INFINITY;
+
+    //  near and far planes of THE frustrum w / mouse
+    const XMVECTOR nearPlane = XMVectorSet(m_InputCommands.windowMouseX, m_InputCommands.windowMouseY, 0.0f, 1.0f);
+    const XMVECTOR farPlane = XMVectorSet(m_InputCommands.windowMouseX, m_InputCommands.windowMouseY, 1.0f, 1.0f);
+
+    for (size_t i = 0; i < m_displayList.size(); i++)
+    {
+        // get scale / translation 
+        const XMVECTORF32 scale = { m_displayList[i].m_scale.x, m_displayList[i].m_scale.y, m_displayList[i].m_scale.z };
+        const XMVECTORF32 pos = { m_displayList[i].m_position.x, m_displayList[i].m_position.y, m_displayList[i].m_position.z };
+
+        // convert rotation to quaternion for rotation - in radians
+        XMVECTOR rot = Quaternion::CreateFromYawPitchRoll(
+            m_displayList[i].m_orientation.y * 3.1415f / 180.0f,
+            m_displayList[i].m_orientation.x * 3.1415f / 180.0f,
+            m_displayList[i].m_orientation.z * 3.1415f / 180.0f);
+
+        // local transfromation matrix
+        XMMATRIX localTransfrom = m_world * XMMatrixTransformation(
+            g_XMZero, Quaternion::Identity, scale,
+            g_XMZero, rot,
+            pos);
+
+        //de projecting the rays vectors / converting from screen space to world space
+        XMVECTOR nearPoint = XMVector3Unproject(
+            nearPlane,
+            0.0f, 0.0f,
+            screenDims.right, screenDims.bottom,
+            m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth,
+            m_projection, m_view,
+            localTransfrom);
+
+
+        XMVECTOR farPoint = XMVector3Unproject(
+            farPlane,
+            0.0f, 0.0f,
+            screenDims.right, screenDims.bottom,
+            m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth,
+            m_projection, m_view,
+            localTransfrom);
+
+        // create ray trace from nearpoint to farpoint
+        XMVECTOR ray = farPoint - nearPoint;
+        ray = XMVector3Normalize(ray);
+
+        for (size_t num = 0; num < m_displayList[i].m_model.get()->meshes.size(); num++)
+        {
+            if (m_displayList[i].m_model.get()->meshes[num]->boundingBox.Intersects(nearPoint, ray, distinceFromCam))
+                if (distinceFromCam < shortestDistance) {
+                    selection = m_displayList[i].m_ID;
+                    shortestDistance = distinceFromCam;
+                }
+        }
+    }
+
+    RebuildDisplayList();
+    return selection;
+}
+
+void Game::AddChosenSelectionMenuIDs(std::vector<unsigned int> newSelectedObject)
+{
+    m_SelectedObjectIDs = newSelectedObject;
 }
 
 void Game::SetCameraValues(float moveSpeed, float camRotationSpeed, float mouseSensitivity)

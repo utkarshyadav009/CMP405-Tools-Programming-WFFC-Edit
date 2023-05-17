@@ -32,7 +32,7 @@ SelectDialogue::~SelectDialogue()
 }
 
 ///pass through pointers to the data in the tool we want to manipulate
-void SelectDialogue::SetObjectData(std::vector<SceneObject>* SceneGraph, int * selection)
+void SelectDialogue::SetObjectData(std::vector<SceneObject>* SceneGraph, std::vector<unsigned int>* selection)
 {
 	m_sceneGraph = SceneGraph;
 	m_currentSelection = selection;
@@ -41,9 +41,13 @@ void SelectDialogue::SetObjectData(std::vector<SceneObject>* SceneGraph, int * s
 	int numSceneObjects = m_sceneGraph->size();
 	for (int i = 0; i < numSceneObjects; i++)
 	{
-		//easily possible to make the data string presented more complex. showing other columns.
-		std::wstring listBoxEntry = std::to_wstring(m_sceneGraph->at(i).ID);
-		m_listBox.AddString(listBoxEntry.c_str());
+		int currentObjectID = m_sceneGraph->at(i).ID;
+		// double check to make sure that the object is not meant to have been deleted 
+		//if (!m_UndoRedoActions->IsObjectFlaggedForDeletion(currentObjectID)) {
+		//	//easily possible to make the data string presented more complex. showing other columns.
+		//	std::wstring listBoxEntry = std::to_wstring(currentObjectID);
+		//	m_listBox.AddString(listBoxEntry.c_str());
+		//}
 	}
 }
 
@@ -62,68 +66,62 @@ void SelectDialogue::End()
 void SelectDialogue::Select()
 {
 	int index = m_listBox.GetCurSel();
+
 	CString currentSelectionValue;
-	
 	m_listBox.GetText(index, currentSelectionValue);
 
-	*m_currentSelection = _ttoi(currentSelectionValue);
+	if (IsGameObjectSelected(_ttoi(currentSelectionValue))) {
 
+		RemoveObjectFromSelection(_ttoi(currentSelectionValue));
+		//m_UndoRedoActions->PassSelectionToToolMain(*m_currentSelection);
+		//m_UndoRedoActions->SignalToRebuildDisplayList();
+	}
+	else {
+		m_currentSelection->push_back(_ttoi(currentSelectionValue));
+		//m_UndoRedoActions->PassSelectionToToolMain(*m_currentSelection);
+		//m_UndoRedoActions->SignalToRebuildDisplayList();
+	}
+
+}
+
+bool SelectDialogue::IsGameObjectSelected(unsigned int objectID)
+{
+	for (size_t i = 0; i < m_currentSelection->size(); i++)
+	{
+		if (objectID == m_currentSelection->at(i)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void SelectDialogue::RemoveObjectFromSelection(unsigned int objectID)
+{
+	std::vector<unsigned int>::iterator pos = std::find(m_currentSelection->begin(), m_currentSelection->end(), objectID);
+
+	if (pos != m_currentSelection->end())
+		m_currentSelection->erase(pos);
 }
 
 BOOL SelectDialogue::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
-
-	//uncomment for modal only
-/*	//roll through all the objects in the scene graph and put an entry for each in the listbox
-	int numSceneObjects = m_sceneGraph->size();
-	for (size_t i = 0; i < numSceneObjects; i++)
-	{
-		//easily possible to make the data string presented more complex. showing other columns.
-		std::wstring listBoxEntry = std::to_wstring(m_sceneGraph->at(i).ID);
-		m_listBox.AddString(listBoxEntry.c_str());
-	}*/
-	
-	return TRUE;  // return TRUE unless you set the focus to a control
-				  // EXCEPTION: OCX Property Pages should return FALSE
+	return TRUE; 
 }
-
-void SelectDialogue::PostNcDestroy()
-{
-}
-
-
-
-
-// SelectDialogue message handlers callback   - We only need this if the dailogue is being setup-with createDialogue().  We are doing
-//it manually so its better to use the messagemap
-/*INT_PTR CALLBACK SelectProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{	
-	switch (uMsg)
-	{
-	case WM_COMMAND:
-		switch (LOWORD(wParam))
-		{
-		case IDOK:
-		//	EndDialog(hwndDlg, wParam);
-			DestroyWindow(hwndDlg);
-			return TRUE;
-			
-
-		case IDCANCEL:
-			EndDialog(hwndDlg, wParam);
-			return TRUE;
-			break;
-		}
-	}
-	
-	return INT_PTR();
-}*/
 
 
 void SelectDialogue::OnBnClickedOk()
 {
 	// TODO: Add your control notification handler code here
 	CDialogEx::OnOK();
+}
+
+void SelectDialogue::OnClose()
+{
+	// TODO: Add your message handler code here and/or call default
+
+	CDialogEx::OnClose();
+	DestroyWindow();
 }
 

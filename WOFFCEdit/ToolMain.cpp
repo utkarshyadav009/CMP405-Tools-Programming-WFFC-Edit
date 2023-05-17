@@ -9,7 +9,6 @@ ToolMain::ToolMain()
 {
 
 	m_currentChunk = 0;		//default value
-	m_selectedObject = 0;	//initial selection ID
 	m_sceneGraph.clear();	//clear the vector for the scenegraph
 	m_databaseConnection = NULL;
 
@@ -41,10 +40,10 @@ ToolMain::~ToolMain()
 }
 
 
-int ToolMain::getCurrentSelectionID()
+std::vector<unsigned int> ToolMain::getCurrentSelectionID()
 {
 
-	return m_selectedObject;
+	return m_selectedObjects;
 }
 
 void ToolMain::onActionInitialise(HWND handle, int width, int height)
@@ -310,110 +309,182 @@ void ToolMain::Tick(MSG *msg)
 		//update Scenegraph
 		//add to scenegraph
 		//resend scenegraph to Direct X renderer
+	if (m_d3dRenderer.ShouldRebuildDisplayList())
+		m_d3dRenderer.BuildDisplayList(&m_sceneGraph);
 
+	m_selectedObjects = m_d3dRenderer.GetSelectedObjectID();
 
 }
 
 void ToolMain::UpdateInput(MSG * msg)
 {
-
-	switch (msg->message)
+	if (HasFocus()) 
 	{
-		//Global inputs,  mouse position and keys etc
-	case WM_KEYDOWN:
-		m_keyArray[msg->wParam] = true;
-		break;
+		switch (msg->message)
+		{
+			//Global inputs,  mouse position and keys etc
+		case WM_KEYDOWN:
+			m_keyArray[msg->wParam] = true;
+			break;
 
-	case WM_KEYUP:
-		m_keyArray[msg->wParam] = false;
-		break;
+		case WM_KEYUP:
+			m_keyArray[msg->wParam] = false;
+			break;
 
-	case WM_MOUSEMOVE:
-		// get mouse pos x/y
-		m_toolInputCommands.windowMouseX = GET_X_LPARAM(msg->lParam);
-		m_toolInputCommands.windowMouseY = GET_Y_LPARAM(msg->lParam);
-
-		POINT mousePos;
-		if (GetCursorPos(&mousePos)) {
-			m_toolInputCommands.mouseX = mousePos.x;
-			m_toolInputCommands.mouseY = mousePos.y;
-		}
-		break;
-
-	case WM_LBUTTONDOWN:
-		m_toolInputCommands.mouseLeftDown = true;
-		break;
-
-	case WM_LBUTTONUP:
-		m_toolInputCommands.mouseLeftDown = false;
-		break;
-
-	case WM_RBUTTONDOWN:
-	{
-		m_toolInputCommands.mouseRightDown = true;
-
-		CWnd* myDXFrame = CWnd::FromHandle(m_toolHandle);
-		CRect dxViewRect;
-		myDXFrame->GetWindowRect(dxViewRect);
-
-		bool mouseWithinViewport = (m_toolInputCommands.mouseX > dxViewRect.left && m_toolInputCommands.mouseX < dxViewRect.right)
-			&& (m_toolInputCommands.mouseY > dxViewRect.top && m_toolInputCommands.mouseY < dxViewRect.bottom);
-
-		if (mouseWithinViewport) {
-			m_toolInputCommands.mouseControllingCam = true;
-			ShowCursor(false);
+		case WM_MOUSEMOVE:
+			// get mouse pos x/y
+			m_toolInputCommands.windowMouseX = GET_X_LPARAM(msg->lParam);
+			m_toolInputCommands.windowMouseY = GET_Y_LPARAM(msg->lParam);
 
 			POINT mousePos;
 			if (GetCursorPos(&mousePos)) {
-				m_toolInputCommands.mouseOriginX = mousePos.x;
-				m_toolInputCommands.mouseOriginY = mousePos.y;
+				m_toolInputCommands.mouseX = mousePos.x;
+				m_toolInputCommands.mouseY = mousePos.y;
+			}
+			break;
+
+		case WM_LBUTTONDOWN:
+			m_toolInputCommands.mouseLeftDown = true;
+			break;
+
+		case WM_LBUTTONUP:
+			m_toolInputCommands.mouseLeftDown = false;
+			break;
+
+		case WM_RBUTTONDOWN:
+		{
+			m_toolInputCommands.mouseRightDown = true;
+
+			CWnd* myDXFrame = CWnd::FromHandle(m_toolHandle);
+			CRect dxViewRect;
+			myDXFrame->GetWindowRect(dxViewRect);
+
+			bool mouseWithinViewport = (m_toolInputCommands.mouseX > dxViewRect.left && m_toolInputCommands.mouseX < dxViewRect.right)
+				&& (m_toolInputCommands.mouseY > dxViewRect.top && m_toolInputCommands.mouseY < dxViewRect.bottom);
+
+			if (mouseWithinViewport && HasFocus()) {
+				m_toolInputCommands.mouseControllingCam = true;
+				ShowCursor(false);
+
+				POINT mousePos;
+				if (GetCursorPos(&mousePos)) {
+					m_toolInputCommands.mouseOriginX = mousePos.x;
+					m_toolInputCommands.mouseOriginY = mousePos.y;
+				}
+
+				SetCursorPos(dxViewRect.CenterPoint().x, dxViewRect.CenterPoint().y);
 			}
 
-			SetCursorPos(dxViewRect.CenterPoint().x, dxViewRect.CenterPoint().y);
+			break;
+		}
+		case WM_RBUTTONUP:
+			m_toolInputCommands.mouseRightDown = false;
+			if (m_toolInputCommands.mouseControllingCam) {
+
+				m_toolInputCommands.mouseControllingCam = false;
+				SetCursorPos(m_toolInputCommands.mouseOriginX, m_toolInputCommands.mouseOriginY);
+				ShowCursor(true);
+			}
+			break;
 		}
 
-		break;
-	}
-	case WM_RBUTTONUP:
-		m_toolInputCommands.mouseRightDown = false;
-		if (m_toolInputCommands.mouseControllingCam) {
+		if (m_keyArray['E'])
+			m_toolInputCommands.moveUp = true;
+		else
+			m_toolInputCommands.moveUp = false;
 
-			m_toolInputCommands.mouseControllingCam = false;
-			SetCursorPos(m_toolInputCommands.mouseOriginX, m_toolInputCommands.mouseOriginY);
-			ShowCursor(true);
+		if (m_keyArray['Q'])
+			m_toolInputCommands.moveDown = true;
+		else
+			m_toolInputCommands.moveDown = false;
+
+		//WASD camMovment
+
+		if (m_keyArray['W'])
+			m_toolInputCommands.forward = true;
+		else
+			m_toolInputCommands.forward = false;
+
+		if (m_keyArray['S'])
+			m_toolInputCommands.back = true;
+		else
+			m_toolInputCommands.back = false;
+
+		if (m_keyArray['A'])
+			m_toolInputCommands.left = true;
+		else
+			m_toolInputCommands.left = false;
+
+		if (m_keyArray['D'])
+			m_toolInputCommands.right = true;
+		else
+			m_toolInputCommands.right = false;
+
+		//cam rot
+		if (!m_d3dRenderer.m_isEditingObjects) {
+
+			if (m_keyArray[VK_UP])
+				m_toolInputCommands.pitchUp = true;
+			else
+				m_toolInputCommands.pitchUp = false;
+
+			if (m_keyArray[VK_DOWN])
+				m_toolInputCommands.pitchDown = true;
+			else
+				m_toolInputCommands.pitchDown = false;
+
+			if (m_keyArray[VK_LEFT])
+				m_toolInputCommands.rotLeft = true;
+			else
+				m_toolInputCommands.rotLeft = false;
+
+			if (m_keyArray[VK_RIGHT])
+				m_toolInputCommands.rotRight = true;
+			else
+				m_toolInputCommands.rotRight = false;
 		}
-		break;
+		else {
+			if (m_toolInputCommands.pitchUp == true) {
+				m_toolInputCommands.pitchUp = false;
+			}
+			if (m_toolInputCommands.pitchDown == true) {
+				m_toolInputCommands.pitchDown = false;
+			}
+			if (m_toolInputCommands.rotLeft == true) {
+				m_toolInputCommands.rotLeft = false;
+			}
+			if (m_toolInputCommands.rotRight == true) {
+				m_toolInputCommands.rotRight = false;
+			}
+		}
+
+		// Activate slow movement
+		if (m_keyArray[VK_SHIFT])
+			m_toolInputCommands.slowMove = true;
+		else
+			m_toolInputCommands.slowMove = false;
+
 	}
 
-	if (m_keyArray['E'])
-		m_toolInputCommands.moveUp = true;
-	else
-		m_toolInputCommands.moveUp = false;
+	}
 
-	if (m_keyArray['Q'])
-		m_toolInputCommands.moveDown = true;
-	else
-		m_toolInputCommands.moveDown = false;
+int ToolMain::GetIndexFromID(unsigned int objectID)
+{
+	for (size_t i = 0; i < m_sceneGraph.size(); i++)
+	{
+		if (m_sceneGraph[i].ID == objectID)
+			return i;
+	}
 
-	//WASD camMovment
+	return -1;
+}
 
-	if (m_keyArray['W'])
-		m_toolInputCommands.forward = true;
-	else
-		m_toolInputCommands.forward = false;
+bool ToolMain::HasFocus()
+{
+	return (GetFocus() == GetParent(m_toolHandle));
+}
 
-	if (m_keyArray['S'])
-		m_toolInputCommands.back = true;
-	else
-		m_toolInputCommands.back = false;
-
-	if (m_keyArray['A'])
-		m_toolInputCommands.left = true;
-	else
-		m_toolInputCommands.left = false;
-
-	if (m_keyArray['D'])
-		m_toolInputCommands.right = true;
-	else
-		m_toolInputCommands.right = false;
+void ToolMain::RebuildDisplayList()
+{
+	m_d3dRenderer.RebuildDisplayList();
 }

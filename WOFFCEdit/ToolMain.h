@@ -16,7 +16,7 @@ public: //methods
 	~ToolMain();
 
 	//onAction - These are the interface to MFC
-	int		getCurrentSelectionID();										//returns the selection number of currently selected object so that It can be displayed.
+	std::vector<unsigned int> 	getCurrentSelectionID();										//returns the selection number of currently selected object so that It can be displayed.
 	void	onActionInitialise(HWND handle, int width, int height);			//Passes through handle and hieght and width and initialises DirectX renderer and SQL LITE
 	void	onActionFocusCamera();
 	void	onActionLoad();													//load the current chunk
@@ -26,6 +26,10 @@ public: //methods
 	void	Tick(MSG *msg);
 	void	UpdateInput(MSG *msg);
 
+	// Utilities
+	int GetIndexFromID(unsigned int objectID);
+	bool HasFocus();
+	void RebuildDisplayList();
 
 	// Camera Functions
 	void UpdateCamSettings(float moveSpeed, float camRotationSpeed, float mouseSensitivity);
@@ -36,7 +40,7 @@ public: //methods
 public:	//variables
 	std::vector<SceneObject>    m_sceneGraph;	//our scenegraph storing all the objects in the current chunk
 	ChunkObject					m_chunk;		//our landscape chunk
-	int m_selectedObject;						//ID of current Selection
+	std::vector<unsigned int> m_selectedObjects;					//ID of current Selection
 
 private:	//methods
 	void	onContentAdded();

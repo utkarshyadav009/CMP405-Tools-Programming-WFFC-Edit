@@ -27,6 +27,8 @@ private:
 	CRect WindowRECT;	//Window area rectangle. 
 	SelectDialogue m_ToolSelectDialogue;			//for modeless dialogue, declare it here
 
+	
+	std::vector<unsigned int> m_SelectedObjectIDs;
 	int m_width;		
 	int m_height;
 	

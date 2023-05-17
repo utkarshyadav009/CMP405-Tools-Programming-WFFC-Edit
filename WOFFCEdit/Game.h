@@ -12,7 +12,7 @@
 #include "ChunkObject.h"
 #include "InputCommands.h"
 #include <vector>
-
+#include "Camera.h"
 
 // A basic game implementation that creates a D3D11 device and
 // provides a game loop.
@@ -51,9 +51,19 @@ public:
 	void SaveDisplayChunk(ChunkObject *SceneChunk);	//saves geometry et al
 	void ClearDisplayList();
 
+	void SetCameraValues(float newMoveSpeed, float newCamRotationSpeed, float newMouseSensitivity);
+	inline float GetMoveSpeed() { return m_Camera.GetMoveSpeed(); }
+	inline float GetRotationSpeed() { return m_Camera.GetRotationSpeed(); }
+	inline float GetMouseSensitivity() { return m_Camera.GetMouseSensitivity(); }
+
+	inline void SetScreenDimensions(RECT viewportDims) { m_screenDimensions = viewportDims; }
+
+
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
 #endif
+public:
+	float m_DeltaTime;
 
 private:
 
@@ -70,15 +80,9 @@ private:
 	InputCommands						m_InputCommands;
 
 	//functionality
-	float								m_movespeed;
-
-	//camera
-	DirectX::SimpleMath::Vector3		m_camPosition;
-	DirectX::SimpleMath::Vector3		m_camOrientation;
-	DirectX::SimpleMath::Vector3		m_camLookAt;
-	DirectX::SimpleMath::Vector3		m_camLookDirection;
-	DirectX::SimpleMath::Vector3		m_camRight;
-	float m_camRotRate;
+	RECT m_screenDimensions;
+	Camera m_Camera;
+	HWND m_Window;
 
 	//control variables
 	bool m_grid;							//grid rendering on / off

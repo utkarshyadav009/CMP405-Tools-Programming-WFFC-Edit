@@ -26,6 +26,13 @@ public: //methods
 	void	Tick(MSG *msg);
 	void	UpdateInput(MSG *msg);
 
+
+	// Camera Functions
+	void UpdateCamSettings(float moveSpeed, float camRotationSpeed, float mouseSensitivity);
+	inline float GetMoveSpeed() { return m_d3dRenderer.GetMoveSpeed(); }
+	inline float GetRotationSpeed() { return m_d3dRenderer.GetRotationSpeed(); }
+	inline float GetMouseSensitivity() { return m_d3dRenderer.GetMouseSensitivity(); }
+
 public:	//variables
 	std::vector<SceneObject>    m_sceneGraph;	//our scenegraph storing all the objects in the current chunk
 	ChunkObject					m_chunk;		//our landscape chunk

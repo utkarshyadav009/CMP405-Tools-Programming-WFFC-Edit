@@ -14,10 +14,23 @@ ToolMain::ToolMain()
 	m_databaseConnection = NULL;
 
 	//zero input commands
-	m_toolInputCommands.forward		= false;
-	m_toolInputCommands.back		= false;
-	m_toolInputCommands.left		= false;
-	m_toolInputCommands.right		= false;
+	m_toolInputCommands.forward =
+		m_toolInputCommands.back =
+		m_toolInputCommands.left =
+		m_toolInputCommands.right =
+		m_toolInputCommands.moveUp =
+		m_toolInputCommands.moveDown = false;
+
+	m_toolInputCommands.rotRight =
+		m_toolInputCommands.rotLeft =
+		m_toolInputCommands.pitchUp =
+		m_toolInputCommands.pitchDown = false;
+
+	m_toolInputCommands.mouseX = m_toolInputCommands.mouseY = 0;
+	m_toolInputCommands.windowMouseX = m_toolInputCommands.windowMouseY = 0;
+	m_toolInputCommands.mouseOriginX = m_toolInputCommands.mouseOriginY = 0;
+	m_toolInputCommands.mouseLeftDown = m_toolInputCommands.mouseRightDown = false;
+	m_toolInputCommands.ctrlDown = false;
 	
 }
 
@@ -40,7 +53,9 @@ void ToolMain::onActionInitialise(HWND handle, int width, int height)
 	m_width		= width;
 	m_height	= height;
 	
-	m_d3dRenderer.Initialize(handle, m_width, m_height);
+	m_toolHandle = handle;
+
+	m_d3dRenderer.Initialize(m_toolHandle, m_width, m_height);
 
 	//database connection establish
 	int rc;
@@ -279,6 +294,15 @@ void ToolMain::onActionSaveTerrain()
 
 void ToolMain::Tick(MSG *msg)
 {
+	CWnd* myDXFrame = CWnd::FromHandle(m_toolHandle);
+	CRect dxViewRect;
+	myDXFrame->GetWindowRect(dxViewRect);
+
+	m_d3dRenderer.SetScreenDimensions(dxViewRect);
+
+	//Renderer Update Call
+	m_d3dRenderer.Tick(&m_toolInputCommands);
+
 	//do we have a selection
 	//do we have a mode
 	//are we clicking / dragging /releasing
@@ -287,8 +311,7 @@ void ToolMain::Tick(MSG *msg)
 		//add to scenegraph
 		//resend scenegraph to Direct X renderer
 
-	//Renderer Update Call
-	m_d3dRenderer.Tick(&m_toolInputCommands);
+
 }
 
 void ToolMain::UpdateInput(MSG * msg)
@@ -306,48 +329,91 @@ void ToolMain::UpdateInput(MSG * msg)
 		break;
 
 	case WM_MOUSEMOVE:
+		// get mouse pos x/y
+		m_toolInputCommands.windowMouseX = GET_X_LPARAM(msg->lParam);
+		m_toolInputCommands.windowMouseY = GET_Y_LPARAM(msg->lParam);
+
+		POINT mousePos;
+		if (GetCursorPos(&mousePos)) {
+			m_toolInputCommands.mouseX = mousePos.x;
+			m_toolInputCommands.mouseY = mousePos.y;
+		}
 		break;
 
-	case WM_LBUTTONDOWN:	//mouse button down,  you will probably need to check when its up too
-		//set some flag for the mouse button in inputcommands
+	case WM_LBUTTONDOWN:
+		m_toolInputCommands.mouseLeftDown = true;
 		break;
 
+	case WM_LBUTTONUP:
+		m_toolInputCommands.mouseLeftDown = false;
+		break;
+
+	case WM_RBUTTONDOWN:
+	{
+		m_toolInputCommands.mouseRightDown = true;
+
+		CWnd* myDXFrame = CWnd::FromHandle(m_toolHandle);
+		CRect dxViewRect;
+		myDXFrame->GetWindowRect(dxViewRect);
+
+		bool mouseWithinViewport = (m_toolInputCommands.mouseX > dxViewRect.left && m_toolInputCommands.mouseX < dxViewRect.right)
+			&& (m_toolInputCommands.mouseY > dxViewRect.top && m_toolInputCommands.mouseY < dxViewRect.bottom);
+
+		if (mouseWithinViewport) {
+			m_toolInputCommands.mouseControllingCam = true;
+			ShowCursor(false);
+
+			POINT mousePos;
+			if (GetCursorPos(&mousePos)) {
+				m_toolInputCommands.mouseOriginX = mousePos.x;
+				m_toolInputCommands.mouseOriginY = mousePos.y;
+			}
+
+			SetCursorPos(dxViewRect.CenterPoint().x, dxViewRect.CenterPoint().y);
+		}
+
+		break;
 	}
-	//here we update all the actual app functionality that we want.  This information will either be used int toolmain, or sent down to the renderer (Camera movement etc
-	//WASD movement
+	case WM_RBUTTONUP:
+		m_toolInputCommands.mouseRightDown = false;
+		if (m_toolInputCommands.mouseControllingCam) {
+
+			m_toolInputCommands.mouseControllingCam = false;
+			SetCursorPos(m_toolInputCommands.mouseOriginX, m_toolInputCommands.mouseOriginY);
+			ShowCursor(true);
+		}
+		break;
+	}
+
+	if (m_keyArray['E'])
+		m_toolInputCommands.moveUp = true;
+	else
+		m_toolInputCommands.moveUp = false;
+
+	if (m_keyArray['Q'])
+		m_toolInputCommands.moveDown = true;
+	else
+		m_toolInputCommands.moveDown = false;
+
+	//WASD camMovment
+
 	if (m_keyArray['W'])
-	{
 		m_toolInputCommands.forward = true;
-	}
-	else m_toolInputCommands.forward = false;
-	
+	else
+		m_toolInputCommands.forward = false;
+
 	if (m_keyArray['S'])
-	{
 		m_toolInputCommands.back = true;
-	}
-	else m_toolInputCommands.back = false;
+	else
+		m_toolInputCommands.back = false;
+
 	if (m_keyArray['A'])
-	{
 		m_toolInputCommands.left = true;
-	}
-	else m_toolInputCommands.left = false;
+	else
+		m_toolInputCommands.left = false;
 
 	if (m_keyArray['D'])
-	{
 		m_toolInputCommands.right = true;
-	}
-	else m_toolInputCommands.right = false;
-	//rotation
-	if (m_keyArray['E'])
-	{
-		m_toolInputCommands.rotRight = true;
-	}
-	else m_toolInputCommands.rotRight = false;
-	if (m_keyArray['Q'])
-	{
-		m_toolInputCommands.rotLeft = true;
-	}
-	else m_toolInputCommands.rotLeft = false;
-
-	//WASD
+	else
+		m_toolInputCommands.right = false;
 }

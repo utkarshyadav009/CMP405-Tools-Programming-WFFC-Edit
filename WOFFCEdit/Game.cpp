@@ -6,7 +6,7 @@
 #include "Game.h"
 #include "DisplayObject.h"
 #include <string>
-
+#include "EditObjectTransform.h"
 
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
@@ -124,7 +124,9 @@ void Game::Update(DX::StepTimer const& timer)
 
     if (m_SelectedObjectIDs.size() == 0) {
         m_isEditingObjects = false;
-
+        m_isEditingPos = false;
+        m_isEditingRot = false;
+        m_isEditingScale = false;
     }
 
     if (m_InputCommands.clearSelectedObjects) {
@@ -132,6 +134,85 @@ void Game::Update(DX::StepTimer const& timer)
         m_InputCommands.clearSelectedObjects = false;
     }
 
+
+    if (m_isEditingObjects) {
+
+        // If the use is editing the position of a game object the comands will be read as such
+        if (m_isEditingPos) {
+            if (m_InputCommands.rightDown) {
+                m_EditObjectTransform->ChangePos(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::PositiveX, m_SelectedObjectIDs);
+            }
+            if (m_InputCommands.leftDown) {
+                m_EditObjectTransform->ChangePos(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::NegativeX, m_SelectedObjectIDs);
+            }
+            if (m_InputCommands.upDown) {
+                if (m_InputCommands.shiftDown) {
+                    m_EditObjectTransform->ChangePos(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::PositiveY, m_SelectedObjectIDs);
+                }
+                else {
+                    m_EditObjectTransform->ChangePos(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::PositiveZ, m_SelectedObjectIDs);
+                }
+            }
+            if (m_InputCommands.downDown) {
+                if (m_InputCommands.shiftDown) {
+                    m_EditObjectTransform->ChangePos(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::NegativeY, m_SelectedObjectIDs);
+                }
+                else {
+                    m_EditObjectTransform->ChangePos(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::NegativeZ, m_SelectedObjectIDs);
+                }
+            }
+        }
+        // If the use is editing the rotation of a game object the comands will be read as such
+        if (m_isEditingRot) {
+            if (m_InputCommands.rightDown) {
+                m_EditObjectTransform->ChangeRot(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::PositiveX, m_SelectedObjectIDs);
+            }
+            if (m_InputCommands.leftDown) {
+                m_EditObjectTransform->ChangeRot(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::NegativeX, m_SelectedObjectIDs);
+            }
+            if (m_InputCommands.upDown) {
+                if (m_InputCommands.shiftDown) {
+                    m_EditObjectTransform->ChangeRot(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::PositiveY, m_SelectedObjectIDs);
+                }
+                else {
+                    m_EditObjectTransform->ChangeRot(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::PositiveZ, m_SelectedObjectIDs);
+                }
+            }
+            if (m_InputCommands.downDown) {
+                if (m_InputCommands.shiftDown) {
+                    m_EditObjectTransform->ChangeRot(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::NegativeY, m_SelectedObjectIDs);
+                }
+                else {
+                    m_EditObjectTransform->ChangeRot(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::NegativeZ, m_SelectedObjectIDs);
+                }
+            }
+        }
+        // If the use is editing the scale of a game object the comands will be read as such
+        if (m_isEditingScale) {
+            if (m_InputCommands.rightDown) {
+                m_EditObjectTransform->ChangeScale(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::PositiveX, m_SelectedObjectIDs);
+            }
+            if (m_InputCommands.leftDown) {
+                m_EditObjectTransform->ChangeScale(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::NegativeX, m_SelectedObjectIDs);
+            }
+            if (m_InputCommands.upDown) {
+                if (m_InputCommands.shiftDown) {
+                    m_EditObjectTransform->ChangeScale(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::PositiveY, m_SelectedObjectIDs);
+                }
+                else {
+                    m_EditObjectTransform->ChangeScale(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::PositiveZ, m_SelectedObjectIDs);
+                }
+            }
+            if (m_InputCommands.downDown) {
+                if (m_InputCommands.shiftDown) {
+                    m_EditObjectTransform->ChangeScale(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::NegativeY, m_SelectedObjectIDs);
+                }
+                else {
+                    m_EditObjectTransform->ChangeScale(float(timer.GetElapsedSeconds()), EditObjectTransform::Directions::NegativeZ, m_SelectedObjectIDs);
+                }
+            }
+        }
+    }
 
     // UpdateCamera
     m_Camera.UpdateViewport(m_screenDimensions);
@@ -468,15 +549,15 @@ void Game::BuildDisplayList(std::vector<SceneObject> * SceneGraph)
                         }
                         else {
 
-                            //if (m_isEditingPos) {
-                            //    fog->SetFogColor(Colors::DarkGreen);
-                            //}
-                            //if (m_isEditingRot) {
-                            //    fog->SetFogColor(Colors::DarkRed);
-                            //}
-                            //if (m_isEditingScale) {
-                            //    fog->SetFogColor(Colors::DarkBlue);
-                            //}
+                            if (m_isEditingPos) {
+                                fog->SetFogColor(Colors::DarkGreen);
+                            }
+                            if (m_isEditingRot) {
+                                fog->SetFogColor(Colors::DarkRed);
+                            }
+                            if (m_isEditingScale) {
+                                fog->SetFogColor(Colors::DarkBlue);
+                            }
                         }
                     }
                 });
@@ -486,7 +567,6 @@ void Game::BuildDisplayList(std::vector<SceneObject> * SceneGraph)
         }
     }
     m_RebuildDisplayList = false;
-		
 }
 
 void Game::BuildDisplayChunk(ChunkObject * SceneChunk)

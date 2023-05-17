@@ -75,6 +75,11 @@ public:
 	float m_DeltaTime;
 	bool m_isEditingObjects;
 
+	bool m_isEditingPos;
+	bool m_isEditingRot;
+	bool m_isEditingScale;
+
+	class EditObjectTransform* m_EditObjectTransform;
 private:
 
 	void Update(DX::StepTimer const& timer);

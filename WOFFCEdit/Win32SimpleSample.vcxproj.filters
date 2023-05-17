@@ -59,7 +59,10 @@
     <ClCompile Include="SelectDialogue.cpp">
       <Filter>MFC</Filter>
     </ClCompile>
-    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Camera.cpp">
+      <Filter>Tool</Filter>
+    </ClCompile>
+    <ClCompile Include="EditObjectTransform.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DeviceResources.h">
@@ -109,7 +112,10 @@
     <ClInclude Include="SelectDialogue.h">
       <Filter>MFC</Filter>
     </ClInclude>
-    <ClInclude Include="Camera.h" />
+    <ClInclude Include="Camera.h">
+      <Filter>Tool</Filter>
+    </ClInclude>
+    <ClInclude Include="EditObjectTransform.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

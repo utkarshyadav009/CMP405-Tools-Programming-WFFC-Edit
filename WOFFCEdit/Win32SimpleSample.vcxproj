@@ -170,6 +170,7 @@
     <ClCompile Include="DeviceResources.cpp" />
     <ClCompile Include="DisplayChunk.cpp" />
     <ClCompile Include="DisplayObject.cpp" />
+    <ClCompile Include="EditObjectTransform.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="MFCFrame.cpp" />
@@ -187,6 +188,7 @@
     <ClInclude Include="DeviceResources.h" />
     <ClInclude Include="DisplayChunk.h" />
     <ClInclude Include="DisplayObject.h" />
+    <ClInclude Include="EditObjectTransform.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="InputCommands.h" />
     <ClInclude Include="MFCFrame.h" />

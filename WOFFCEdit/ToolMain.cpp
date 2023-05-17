@@ -30,7 +30,8 @@ ToolMain::ToolMain()
 	m_toolInputCommands.mouseOriginX = m_toolInputCommands.mouseOriginY = 0;
 	m_toolInputCommands.mouseLeftDown = m_toolInputCommands.mouseRightDown = false;
 	m_toolInputCommands.ctrlDown = false;
-	
+
+	m_d3dRenderer.m_EditObjectTransform = &m_EditObjectTransform;
 }
 
 
@@ -199,6 +200,8 @@ void ToolMain::onActionLoad()
 
 void ToolMain::onActionSave()
 {
+	StopEditingObjects();
+
 	//SQL
 	int rc;
 	char *sqlCommand;
@@ -458,15 +461,218 @@ void ToolMain::UpdateInput(MSG * msg)
 			}
 		}
 
-		// Activate slow movement
-		if (m_keyArray[VK_SHIFT])
-			m_toolInputCommands.slowMove = true;
+
+
+		// Activate multi selection
+		if (m_keyArray[VK_CONTROL])
+			m_toolInputCommands.ctrlDown = true;
 		else
-			m_toolInputCommands.slowMove = false;
+			m_toolInputCommands.ctrlDown = false;
 
-	}
 
+		// Delete Object
+		if (m_keyArray[VK_DELETE])
+		{
+			if (m_selectedObjects.size() > 0 && m_toolInputCommands.deleteKeyDown == false) {
+
+				//m_UndoRedoSystem.AddNewAction(m_selectedObjects, Action::Deletion);
+				m_selectedObjects.clear();
+				m_toolInputCommands.clearSelectedObjects = true;
+				m_d3dRenderer.RebuildDisplayList();
+				m_d3dRenderer.m_SelectedObjectIDs.clear();
+				m_UnalteredObjects.clear();
+				m_UpdatedObjects.clear();
+			}
+
+			m_toolInputCommands.deleteKeyDown = true;
+		}
+
+		// turn on eddit object pos
+		if (m_keyArray[VK_F1]) {
+			if (m_toolInputCommands.fOneDown == false && m_d3dRenderer.m_isEditingPos == false) {
+				m_d3dRenderer.m_isEditingObjects = true;
+				m_d3dRenderer.m_isEditingPos = true;
+				m_d3dRenderer.m_isEditingRot = false;
+				m_d3dRenderer.m_isEditingScale = false;
+				m_d3dRenderer.RebuildDisplayList();
+				m_toolInputCommands.fOneDown = true;
+			}
+			else if (m_toolInputCommands.fOneDown == false && m_d3dRenderer.m_isEditingPos == true) {
+
+				StopEditingObjects();
+
+				m_toolInputCommands.fOneDown = true;
+			}
+
+		}
+		if (!m_keyArray[VK_F1]) {
+			m_toolInputCommands.fOneDown = false;
+		}
+
+		// turn on eddit object rot
+		if (m_keyArray[VK_F2]) {
+			if (m_toolInputCommands.fTwoDown == false && m_d3dRenderer.m_isEditingRot == false) {
+				StopEditingObjects();
+				m_d3dRenderer.m_isEditingObjects = true;
+				m_d3dRenderer.m_isEditingRot = true;
+				m_d3dRenderer.m_isEditingScale = false;
+				m_d3dRenderer.m_isEditingPos = false;
+				m_toolInputCommands.fTwoDown = true;
+			}
+			else if (m_toolInputCommands.fTwoDown == false && m_d3dRenderer.m_isEditingRot == true) {
+				StopEditingObjects();
+				m_toolInputCommands.fTwoDown = true;
+			}
+		}
+		if (!m_keyArray[VK_F2]) {
+			m_toolInputCommands.fTwoDown = false;
+		}
+
+		// turn on eddit object sclae
+		if (m_keyArray[VK_F3]) {
+			if (m_toolInputCommands.fThreeDown == false && m_d3dRenderer.m_isEditingScale == false) {
+				StopEditingObjects();
+				m_d3dRenderer.m_isEditingObjects = true;
+				m_d3dRenderer.m_isEditingScale = true;
+				m_d3dRenderer.m_isEditingPos = false;
+				m_d3dRenderer.m_isEditingRot = false;
+				m_toolInputCommands.fThreeDown = true;
+			}
+			else if (m_toolInputCommands.fThreeDown == false && m_d3dRenderer.m_isEditingScale == true) {
+				StopEditingObjects();
+				m_toolInputCommands.fThreeDown = true;
+			}
+		}
+		if (!m_keyArray[VK_F3]) {
+			m_toolInputCommands.fThreeDown = false;
+		}
+
+		if (m_d3dRenderer.m_isEditingObjects) {
+
+			m_UpdatedObjectsCaptured = false;
+			if (m_numEditingObjects != m_d3dRenderer.m_SelectedObjectIDs.size()) {
+
+				AddObjectsToUnalteredObjects();
+			}
+			//set m_WasEditingObjectTransforms to true so that if the state changes we can take the aproprite actions the next time we are not
+			m_WasEditingObjectTransforms = true;
+
+			if (m_toolInputCommands.slowMove == true) {
+				m_toolInputCommands.slowMove = false;
+			}
+
+			if (m_keyArray[VK_RIGHT]) {
+				m_toolInputCommands.rightDown = true;
+				m_d3dRenderer.RebuildDisplayList();
+
+				if (m_NewEditingStarted == false) {
+					m_NewEditingStarted = true;
+				}
+			}
+			else {
+				m_toolInputCommands.rightDown = false;
+				if (m_NewEditingStarted) {
+					if (EditingTransformsStoped()) {
+						AddObjectsUpdatedObjects();
+					}
+				}
+			}
+
+			if (m_keyArray[VK_LEFT]) {
+				m_toolInputCommands.leftDown = true;
+				m_d3dRenderer.RebuildDisplayList();
+
+				if (m_NewEditingStarted == false) {
+					m_NewEditingStarted = true;
+				}
+			}
+			else {
+				m_toolInputCommands.leftDown = false;
+				if (m_NewEditingStarted) {
+					if (EditingTransformsStoped()) {
+						AddObjectsUpdatedObjects();
+					}
+				}
+			}
+
+			if (m_keyArray[VK_UP]) {
+				m_toolInputCommands.upDown = true;
+				m_d3dRenderer.RebuildDisplayList();
+
+				if (m_NewEditingStarted == false) {
+					m_NewEditingStarted = true;
+				}
+			}
+			else {
+				m_toolInputCommands.upDown = false;
+				if (m_NewEditingStarted) {
+					if (EditingTransformsStoped()) {
+						AddObjectsUpdatedObjects();
+					}
+				}
+			}
+
+			if (m_keyArray[VK_DOWN]) {
+				m_toolInputCommands.downDown = true;
+				m_d3dRenderer.RebuildDisplayList();
+
+				if (m_NewEditingStarted == false) {
+					m_NewEditingStarted = true;
+				}
+			}
+			else {
+				m_toolInputCommands.downDown = false;
+
+				if (m_NewEditingStarted) {
+					if (EditingTransformsStoped()) {
+						AddObjectsUpdatedObjects();
+					}
+				}
+			}
+		}
+		else {
+
+			if (m_WasEditingObjectTransforms) {
+				m_WasEditingObjectTransforms = false;
+
+				if (m_NewEditingStarted == true && m_UpdatedObjectsCaptured == false) {
+					AddObjectsUpdatedObjects();
+				}
+			}
+
+			if (m_toolInputCommands.rightDown == true) {
+				m_toolInputCommands.rightDown = false;
+			}
+			if (m_toolInputCommands.leftDown == true) {
+				m_toolInputCommands.leftDown = false;
+			}
+			if (m_toolInputCommands.upDown == true) {
+				m_toolInputCommands.upDown = false;
+			}
+			if (m_toolInputCommands.downDown == true) {
+				m_toolInputCommands.downDown = false;
+			}
+			if (m_toolInputCommands.shiftDown == true) {
+				m_toolInputCommands.shiftDown = false;
+			}
+
+			// Activate slow movement
+			if (m_keyArray[VK_SHIFT])
+				m_toolInputCommands.slowMove = true;
+			else
+				m_toolInputCommands.slowMove = false;
+		}
 	}
+	else {
+		StopEditingObjects();
+		m_toolInputCommands.left = false;
+		m_toolInputCommands.right = false;
+		m_toolInputCommands.moveUp = false;
+		m_toolInputCommands.moveDown = false;
+		m_toolInputCommands.forward = false;
+		m_toolInputCommands.back = false;
+	}
+}
 
 int ToolMain::GetIndexFromID(unsigned int objectID)
 {
@@ -487,4 +693,334 @@ bool ToolMain::HasFocus()
 void ToolMain::RebuildDisplayList()
 {
 	m_d3dRenderer.RebuildDisplayList();
+}
+
+void ToolMain::StopEditingObjects()
+{
+	m_d3dRenderer.m_isEditingObjects = false;
+	m_d3dRenderer.m_isEditingPos = false;
+	m_d3dRenderer.m_isEditingRot = false;
+	m_d3dRenderer.m_isEditingScale = false;
+
+	m_UpdatedObjectsCaptured = true;
+	m_NewEditingStarted = false;
+	m_UnalteredObjects.clear();
+	m_UpdatedObjects.clear();
+	m_d3dRenderer.RebuildDisplayList();
+}
+
+BOOL ToolMain::DetectChangeInObject()
+{
+	if (m_OriginalObject.name != m_ObjectUpdate.name) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.parent_id != m_ObjectUpdate.parent_id) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.model_path != m_ObjectUpdate.model_path) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.tex_diffuse_path != m_ObjectUpdate.tex_diffuse_path) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.posX != m_ObjectUpdate.posX) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.posY != m_ObjectUpdate.posY) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.posZ != m_ObjectUpdate.posZ) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.rotX != m_ObjectUpdate.rotX) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.rotY != m_ObjectUpdate.rotY) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.rotZ != m_ObjectUpdate.rotZ) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.scaX != m_ObjectUpdate.scaX) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.scaY != m_ObjectUpdate.scaY) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.scaZ != m_ObjectUpdate.scaZ) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.pivotX != m_ObjectUpdate.pivotX) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.pivotY != m_ObjectUpdate.pivotY) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.pivotZ != m_ObjectUpdate.pivotZ) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.snapToGround != m_ObjectUpdate.snapToGround) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.collision_mesh != m_ObjectUpdate.collision_mesh) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.collision != m_ObjectUpdate.collision) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.collectable != m_ObjectUpdate.collectable) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.destructable != m_ObjectUpdate.destructable) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.health_amount != m_ObjectUpdate.health_amount) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.light_type != m_ObjectUpdate.light_type) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.light_diffuse_r != m_ObjectUpdate.light_diffuse_r) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.light_diffuse_g != m_ObjectUpdate.light_diffuse_g) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.light_diffuse_b != m_ObjectUpdate.light_diffuse_b) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.light_specular_r != m_ObjectUpdate.light_specular_r) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.light_specular_g != m_ObjectUpdate.light_specular_g) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.light_specular_b != m_ObjectUpdate.light_specular_b) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.light_spot_cutoff != m_ObjectUpdate.light_spot_cutoff) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.light_constant != m_ObjectUpdate.light_constant) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.light_linear != m_ObjectUpdate.light_linear) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.light_quadratic != m_ObjectUpdate.light_quadratic) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.render != m_ObjectUpdate.render) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.editor_render != m_ObjectUpdate.editor_render) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.camera != m_ObjectUpdate.camera) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.editor_wireframe != m_ObjectUpdate.editor_wireframe) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.editor_texture_vis != m_ObjectUpdate.editor_texture_vis) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.editor_normals_vis != m_ObjectUpdate.editor_normals_vis) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.editor_collision_vis != m_ObjectUpdate.editor_collision_vis) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.editor_pivot_vis != m_ObjectUpdate.editor_pivot_vis) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.audio_path != m_ObjectUpdate.audio_path) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.volume != m_ObjectUpdate.volume) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.pan != m_ObjectUpdate.pan) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.pitch != m_ObjectUpdate.pitch) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.one_shot != m_ObjectUpdate.one_shot) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.play_on_init != m_ObjectUpdate.play_on_init) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.play_in_editor != m_ObjectUpdate.play_in_editor) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.min_dist != m_ObjectUpdate.min_dist) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.max_dist != m_ObjectUpdate.max_dist) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.AINode != m_ObjectUpdate.AINode) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.path_node != m_ObjectUpdate.path_node) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.path_node_start != m_ObjectUpdate.path_node_start) {
+		return TRUE;
+	}
+
+	if (m_OriginalObject.path_node_end != m_ObjectUpdate.path_node_end) {
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+void ToolMain::AddObjectsToUnalteredObjects()
+{
+	for (size_t i = 0; i < m_d3dRenderer.m_SelectedObjectIDs.size(); i++)
+	{
+		bool objectInList = false;
+
+		for (size_t j = 0; j < m_UnalteredObjects.size(); j++)
+		{
+			if (m_d3dRenderer.m_SelectedObjectIDs[i] == m_UnalteredObjects[j].ID) {
+				objectInList = true;
+				break;
+			}
+		}
+
+		if (!objectInList) {
+			m_UnalteredObjects.push_back(m_sceneGraph[GetIndexFromID(m_d3dRenderer.m_SelectedObjectIDs[i])]);
+		}
+	}
+
+	m_UpdatedObjectsCaptured = false;
+	m_UpdatedObjects.clear();
+}
+
+void ToolMain::AddObjectsUpdatedObjects()
+{
+	m_UpdatedObjectsCaptured = true;
+	m_NewEditingStarted = false;
+
+	for (size_t i = 0; i < m_UnalteredObjects.size(); i++)
+	{
+		m_OriginalObject = m_UnalteredObjects[i];
+		m_ObjectUpdate = m_sceneGraph[GetIndexFromID(m_UnalteredObjects[i].ID)];
+
+		// if the object was not changed remove it from the list
+		if (DetectChangeInObject() == false) {
+			m_UnalteredObjects.erase(m_UnalteredObjects.begin() + i);
+			i--;
+		}
+	}
+
+	///if m_UnalteredObjects is now empty no changes where made so we return
+	if (m_UnalteredObjects.size() == 0) {
+		return;
+	}
+
+	for (size_t i = 0; i < m_UnalteredObjects.size(); i++)
+	{
+		m_UpdatedObjects.push_back(m_sceneGraph[GetIndexFromID(m_UnalteredObjects[i].ID)]);
+	}
+
+	if (m_UpdatedObjects.size() == m_UnalteredObjects.size()) {
+
+		std::vector<unsigned int> objectIDs;
+		// tempereraly reset the objects to the state they where in before the change
+		for (size_t i = 0; i < m_UnalteredObjects.size(); i++)
+		{
+			m_sceneGraph[GetIndexFromID(m_UnalteredObjects[i].ID)] = m_UnalteredObjects[i];
+			objectIDs.push_back(m_UnalteredObjects[i].ID);
+		}
+
+		// add the new action to the undo redo system
+		//m_UndoRedoSystem.AddNewAction(objectIDs, Action::Default);
+
+		// restore the objects to the state they where in after the change
+		for (size_t i = 0; i < m_UpdatedObjects.size(); i++)
+		{
+			m_sceneGraph[GetIndexFromID(m_UnalteredObjects[i].ID)] = m_UpdatedObjects[i];
+		}
+
+		// finaly we add the end resut the undo redo system
+		//m_UndoRedoSystem.AddPostAction(objectIDs);
+
+		m_UnalteredObjects.clear();
+		m_UpdatedObjects.clear();
+	}
+}
+
+BOOL ToolMain::EditingTransformsStoped()
+{
+	if (m_toolInputCommands.rightDown == true) {
+		return FALSE;
+	}
+	if (m_toolInputCommands.leftDown == true) {
+		return FALSE;
+	}
+	if (m_toolInputCommands.upDown == true) {
+		return FALSE;
+	}
+	if (m_toolInputCommands.downDown == true) {
+		return FALSE;
+	}
+
+	return TRUE;
 }

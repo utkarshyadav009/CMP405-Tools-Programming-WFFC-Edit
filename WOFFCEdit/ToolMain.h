@@ -6,6 +6,7 @@
 #include "sqlite3.h"
 #include "SceneObject.h"
 #include "InputCommands.h"
+#include "EditObjectTransform.h"
 #include <vector>
 
 
@@ -41,9 +42,11 @@ public:	//variables
 	std::vector<SceneObject>    m_sceneGraph;	//our scenegraph storing all the objects in the current chunk
 	ChunkObject					m_chunk;		//our landscape chunk
 	std::vector<unsigned int> m_selectedObjects;					//ID of current Selection
+	EditObjectTransform m_EditObjectTransform{ this };
 
 private:	//methods
 	void	onContentAdded();
+	void StopEditingObjects();
 
 
 		
@@ -59,6 +62,18 @@ private:	//variables
 	int m_height;
 	int m_currentChunk;			//the current chunk of thedatabase that we are operating on.  Dictates loading and saving. 
 	
+	SceneObject m_OriginalObject;
+	SceneObject m_ObjectUpdate;
+	BOOL DetectChangeInObject();
+	bool m_WasEditingObjectTransforms;
+	int m_numEditingObjects;
 
+	std::vector<SceneObject> m_UnalteredObjects;
+	std::vector<SceneObject> m_UpdatedObjects;
+	void AddObjectsToUnalteredObjects();
+	void AddObjectsUpdatedObjects();
+	bool m_NewEditingStarted;
+	bool m_UpdatedObjectsCaptured;
+	BOOL EditingTransformsStoped();
 	
 };

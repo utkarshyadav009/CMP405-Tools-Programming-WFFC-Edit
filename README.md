@@ -12,3 +12,5 @@ An MMo style game editor which edits database content for educational purposes
 
 #Object Manipulation
 
+Video Demonstration: https://youtu.be/KKyD4yt40S8
+

@@ -643,6 +643,8 @@ void ToolMain::UpdateInput(MSG * msg)
 			m_toolInputCommands.pasteDown = true;
 		}
 
+
+
 		//RestDelete
 		if (!m_keyArray[VK_DELETE]) {
 			m_toolInputCommands.deleteKeyDown = false;

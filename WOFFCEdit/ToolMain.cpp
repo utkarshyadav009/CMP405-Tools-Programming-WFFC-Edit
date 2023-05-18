@@ -607,6 +607,8 @@ void ToolMain::UpdateInput(MSG * msg)
 
 			m_toolInputCommands.deleteKeyDown = true;
 		}
+
+		//undo
 		if (m_keyArray[VK_CONTROL] && m_keyArray['Z']) {
 
 			if (m_toolInputCommands.undoDown == false) {
@@ -615,6 +617,7 @@ void ToolMain::UpdateInput(MSG * msg)
 
 			m_toolInputCommands.undoDown = true;
 		}
+		//redo
 		if (m_keyArray[VK_CONTROL] && m_keyArray['Y']) {
 
 			if (m_toolInputCommands.redoDown == false) {

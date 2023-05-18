@@ -7,6 +7,8 @@
 #include "SceneObject.h"
 #include "InputCommands.h"
 #include "EditObjectTransform.h"
+#include "CopyPasteSystem.h"
+#include "UndoRedoActions.h"
 #include <vector>
 
 
@@ -21,6 +23,14 @@ public: //methods
 	void	onActionInitialise(HWND handle, int width, int height);			//Passes through handle and hieght and width and initialises DirectX renderer and SQL LITE
 	void	onActionFocusCamera();
 	void	onActionLoad();													//load the current chunk
+	
+	void    onActionInsertNewObject(CString modelPath, CString texturePath, float positionX, float positionY, float positionZ,
+		float rotationX, float rotationY, float rotationZ, float scaleX, float scaleY, float scaleZ);
+
+	void    onActionPasteObjects(std::vector<SceneObject> m_CopyedObjects);
+
+	void	onAcionUpdateObjectByID(std::vector<unsigned int> updateData, std::vector<SceneObject> newObjects);
+	
 	afx_msg	void	onActionSave();											//save the current chunk
 	afx_msg void	onActionSaveTerrain();									//save chunk geometry
 
@@ -43,6 +53,10 @@ public:	//variables
 	ChunkObject					m_chunk;		//our landscape chunk
 	std::vector<unsigned int> m_selectedObjects;					//ID of current Selection
 	EditObjectTransform m_EditObjectTransform{ this };
+	CopyPasteSystem m_CopyPasteSystem{ this };
+	UndoRedoActions m_UndoRedoSystem{ this };
+
+	Game	m_d3dRenderer;		//Instance of D3D rendering system for our tool
 
 private:	//methods
 	void	onContentAdded();
@@ -52,7 +66,6 @@ private:	//methods
 		
 private:	//variables
 	HWND	m_toolHandle;		//Handle to the  window
-	Game	m_d3dRenderer;		//Instance of D3D rendering system for our tool
 	InputCommands m_toolInputCommands;		//input commands that we want to use and possibly pass over to the renderer
 	CRect	WindowRECT;		//Window area rectangle. 
 	char	m_keyArray[256];

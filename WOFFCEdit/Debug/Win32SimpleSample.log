@@ -1,33 +1,11 @@
 ﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(517,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (Win32SimpleSample.vcxproj).  This can lead to incorrect clean and rebuild behavior.
-  DisplayChunk.cpp
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\DisplayChunk.cpp(14,50): warning C4305: '=': truncation from 'double' to 'float'
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\DisplayChunk.cpp(15,49): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\DisplayChunk.cpp(74,185): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\DisplayChunk.cpp(74,81): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\DisplayChunk.cpp(94,10): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\DisplayChunk.cpp(152,10): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\DisplayChunk.cpp(189,30): warning C4101: 'index4': unreferenced local variable
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\DisplayChunk.cpp(189,14): warning C4101: 'index2': unreferenced local variable
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\DisplayChunk.cpp(189,22): warning C4101: 'index3': unreferenced local variable
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\DisplayChunk.cpp(189,6): warning C4101: 'index1': unreferenced local variable
+  CopyPasteSystem.cpp
+  _WIN32_WINNT not defined. Defaulting to _WIN32_WINNT_MAXVER (see WinSDKVer.h)
   EditObjectTransform.cpp
   _WIN32_WINNT not defined. Defaulting to _WIN32_WINNT_MAXVER (see WinSDKVer.h)
 D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\EditObjectTransform.cpp(94,29): warning C4305: '=': truncation from 'double' to 'float'
 D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\EditObjectTransform.cpp(106,29): warning C4305: '=': truncation from 'double' to 'float'
 D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\EditObjectTransform.cpp(118,29): warning C4305: '=': truncation from 'double' to 'float'
-  Game.cpp
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\Game.cpp(310,57): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\Game.cpp(309,57): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\Game.cpp(308,97): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\Game.cpp(340,119): warning C4244: 'argument': conversion from 'LONG' to 'float', possible loss of data
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\Game.cpp(596,89): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\Game.cpp(596,59): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\Game.cpp(597,88): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\Game.cpp(597,58): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\Game.cpp(621,41): warning C4244: 'argument': conversion from 'LONG' to 'float', possible loss of data
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\Game.cpp(621,23): warning C4244: 'argument': conversion from 'LONG' to 'float', possible loss of data
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\Game.cpp(630,41): warning C4244: 'argument': conversion from 'LONG' to 'float', possible loss of data
-D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\Game.cpp(630,23): warning C4244: 'argument': conversion from 'LONG' to 'float', possible loss of data
   Main.cpp
   _WIN32_WINNT not defined. Defaulting to _WIN32_WINNT_MAXVER (see WinSDKVer.h)
   MFCFrame.cpp
@@ -63,5 +41,7 @@ D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\ToolMain.cpp(155
 D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\ToolMain.cpp(156,56): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\ToolMain.cpp(157,54): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
 D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\ToolMain.cpp(158,57): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+  UndoRedoActions.cpp
+  _WIN32_WINNT not defined. Defaulting to _WIN32_WINNT_MAXVER (see WinSDKVer.h)
   Generating Code...
   Win32SimpleSample.vcxproj -> D:\4th Year\CMP405\CMP405-Tools-Programming-WFFC-Edit\WOFFCEdit\Debug\WoFEdit.exe

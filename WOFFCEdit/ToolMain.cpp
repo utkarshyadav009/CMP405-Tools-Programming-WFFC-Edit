@@ -198,8 +198,129 @@ void ToolMain::onActionLoad()
 
 }
 
+void ToolMain::onActionInsertNewObject(CString modelPath, CString texturePath, float positionX, float positionY, float positionZ, float rotationX, float rotationY, float rotationZ, float scaleX, float scaleY, float scaleZ)
+{
+	SceneObject newSceneObject;
+
+	if (m_sceneGraph.size() > 0) {
+		newSceneObject.ID = m_sceneGraph.back().ID + 1;
+		newSceneObject.chunk_ID = m_sceneGraph.back().chunk_ID + 1;
+	}
+	else {
+		newSceneObject.ID = 1;
+		newSceneObject.chunk_ID = 0;
+	}
+
+	newSceneObject.model_path = CT2CA(modelPath);
+	newSceneObject.tex_diffuse_path = CT2CA(texturePath);
+	newSceneObject.posX = positionX;
+	newSceneObject.posY = positionY;
+	newSceneObject.posZ = positionZ;
+	newSceneObject.rotX = rotationX;
+	newSceneObject.rotY = rotationY;
+	newSceneObject.rotZ = rotationZ;
+	newSceneObject.scaX = scaleX;
+	newSceneObject.scaY = scaleY;
+	newSceneObject.scaZ = scaleZ;
+	newSceneObject.render = false;
+	newSceneObject.collision = false;
+	newSceneObject.collision_mesh = "";
+	newSceneObject.collectable = false;
+	newSceneObject.destructable = false;
+	newSceneObject.health_amount = 0;
+	newSceneObject.editor_render = true;
+	newSceneObject.editor_texture_vis = true;
+	newSceneObject.editor_normals_vis = true;
+	newSceneObject.editor_collision_vis = true;
+	newSceneObject.editor_pivot_vis = true;
+	newSceneObject.pivotX = 0;
+	newSceneObject.pivotY = 0;
+	newSceneObject.pivotZ = 0;
+	newSceneObject.snapToGround = false;
+	newSceneObject.AINode = false;
+	newSceneObject.audio_path = "";
+	newSceneObject.volume = 0;
+	newSceneObject.pitch = 0;
+	newSceneObject.pan = 0;
+	newSceneObject.one_shot = false;
+	newSceneObject.play_on_init = false;
+	newSceneObject.play_in_editor = false;
+	newSceneObject.min_dist = 0;
+	newSceneObject.max_dist = 0;
+	newSceneObject.camera = false;
+	newSceneObject.path_node = false;
+	newSceneObject.path_node_start = false;
+	newSceneObject.path_node_end = false;
+	newSceneObject.parent_id = 0;
+	newSceneObject.editor_wireframe = false;
+	newSceneObject.name = newSceneObject.model_path.substr(newSceneObject.model_path.rfind('/'), newSceneObject.model_path.rfind(".cmo"));
+
+	newSceneObject.light_type = 1;
+	newSceneObject.light_diffuse_r = 2;
+	newSceneObject.light_diffuse_g = 3;
+	newSceneObject.light_diffuse_b = 4;
+	newSceneObject.light_specular_r = 5;
+	newSceneObject.light_specular_g = 6;
+	newSceneObject.light_specular_b = 7;
+	newSceneObject.light_spot_cutoff = 8;
+	newSceneObject.light_constant = 9;
+	newSceneObject.light_linear = 0;
+	newSceneObject.light_quadratic = 1;
+
+	//send completed object to scenegraph
+	m_sceneGraph.push_back(newSceneObject);
+
+	std::vector<unsigned int> newSceneAdditionID;
+	newSceneAdditionID.push_back(newSceneObject.ID);
+
+	m_UndoRedoSystem.AddNewAction(newSceneAdditionID, Action::Addition);
+	m_d3dRenderer.RebuildDisplayList();
+}
+
+void ToolMain::onActionPasteObjects(std::vector<SceneObject> m_CopyedObjects)
+{
+	std::vector<SceneObject> newSceneObjects;
+	std::vector<unsigned int> newSceneAdditionID;
+
+
+	for (size_t i = 0; i < m_CopyedObjects.size(); i++)
+	{
+		newSceneObjects.push_back(m_CopyedObjects[i]);
+
+		if (m_sceneGraph.size() > 0) {
+			newSceneObjects[i].ID = m_sceneGraph.back().ID + 1;
+			newSceneObjects[i].chunk_ID = m_sceneGraph.back().chunk_ID;
+		}
+		else {
+			newSceneObjects[i].ID = 1;
+			newSceneObjects[i].chunk_ID = 0;
+		}
+
+		newSceneAdditionID.push_back(newSceneObjects[i].ID);
+		m_sceneGraph.push_back(newSceneObjects[i]);
+	}
+
+	m_UndoRedoSystem.AddNewAction(newSceneAdditionID, Action::Addition);
+	m_d3dRenderer.RebuildDisplayList();
+}
+
+void ToolMain::onAcionUpdateObjectByID(std::vector<unsigned int> updatedIDs, std::vector<SceneObject> objectsUpdates)
+{
+	m_UndoRedoSystem.AddNewAction(updatedIDs, Action::Default);
+
+	for (size_t i = 0; i < updatedIDs.size(); i++)
+	{
+		m_sceneGraph[GetIndexFromID(updatedIDs[i])] = objectsUpdates[i];
+	}
+
+	m_UndoRedoSystem.AddPostAction(updatedIDs);
+}
+
 void ToolMain::onActionSave()
 {
+	// as we are saving the game here all objects that are flagged for deletion are deleted and the undo/redo action stack cleared 
+	m_UndoRedoSystem.DeleteAllFlaggedObjects();
+
 	StopEditingObjects();
 
 	//SQL
@@ -475,7 +596,7 @@ void ToolMain::UpdateInput(MSG * msg)
 		{
 			if (m_selectedObjects.size() > 0 && m_toolInputCommands.deleteKeyDown == false) {
 
-				//m_UndoRedoSystem.AddNewAction(m_selectedObjects, Action::Deletion);
+				m_UndoRedoSystem.AddNewAction(m_selectedObjects, Action::Deletion);
 				m_selectedObjects.clear();
 				m_toolInputCommands.clearSelectedObjects = true;
 				m_d3dRenderer.RebuildDisplayList();
@@ -485,6 +606,62 @@ void ToolMain::UpdateInput(MSG * msg)
 			}
 
 			m_toolInputCommands.deleteKeyDown = true;
+		}
+		if (m_keyArray[VK_CONTROL] && m_keyArray['Z']) {
+
+			if (m_toolInputCommands.undoDown == false) {
+				m_UndoRedoSystem.Undo();
+			}
+
+			m_toolInputCommands.undoDown = true;
+		}
+		if (m_keyArray[VK_CONTROL] && m_keyArray['Y']) {
+
+			if (m_toolInputCommands.redoDown == false) {
+				m_UndoRedoSystem.Redo();
+			}
+
+			m_toolInputCommands.redoDown = true;
+		}
+
+		//Copy
+		if (m_keyArray[VK_CONTROL] && m_keyArray['C']) {
+
+			if (m_toolInputCommands.copyDown == false) {
+				m_CopyPasteSystem.CopySelectedObjects(m_d3dRenderer.m_SelectedObjectIDs);
+			}
+
+			m_toolInputCommands.copyDown = true;
+		}
+		//Paste
+		if (m_keyArray[VK_CONTROL] && m_keyArray['V']) {
+
+			if (m_toolInputCommands.pasteDown == false) {
+				m_CopyPasteSystem.PasteCopiedObjects();
+			}
+
+			m_toolInputCommands.pasteDown = true;
+		}
+
+		//RestDelete
+		if (!m_keyArray[VK_DELETE]) {
+			m_toolInputCommands.deleteKeyDown = false;
+		}
+		//RestUndo
+		if (!m_keyArray['Z']) {
+			m_toolInputCommands.undoDown = false;
+		}
+		//RestRedo
+		if (!m_keyArray['Y']) {
+			m_toolInputCommands.redoDown = false;
+		}
+		//RestCopy
+		if (!m_keyArray['C']) {
+			m_toolInputCommands.copyDown = false;
+		}
+		//RestPaste
+		if (!m_keyArray['V']) {
+			m_toolInputCommands.pasteDown = false;
 		}
 
 		// turn on eddit object pos
@@ -629,6 +806,14 @@ void ToolMain::UpdateInput(MSG * msg)
 					}
 				}
 			}
+
+
+			// Activate slow movement
+			if (m_keyArray[VK_SHIFT])
+				m_toolInputCommands.slowMove = true;
+			else
+				m_toolInputCommands.slowMove = false;
+
 		}
 		else {
 
@@ -991,7 +1176,7 @@ void ToolMain::AddObjectsUpdatedObjects()
 		}
 
 		// add the new action to the undo redo system
-		//m_UndoRedoSystem.AddNewAction(objectIDs, Action::Default);
+		m_UndoRedoSystem.AddNewAction(objectIDs, Action::Default);
 
 		// restore the objects to the state they where in after the change
 		for (size_t i = 0; i < m_UpdatedObjects.size(); i++)
@@ -1000,7 +1185,7 @@ void ToolMain::AddObjectsUpdatedObjects()
 		}
 
 		// finaly we add the end resut the undo redo system
-		//m_UndoRedoSystem.AddPostAction(objectIDs);
+		m_UndoRedoSystem.AddPostAction(objectIDs);
 
 		m_UnalteredObjects.clear();
 		m_UpdatedObjects.clear();

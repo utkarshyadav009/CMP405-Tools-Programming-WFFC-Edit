@@ -62,7 +62,15 @@
     <ClCompile Include="Camera.cpp">
       <Filter>Tool</Filter>
     </ClCompile>
-    <ClCompile Include="EditObjectTransform.cpp" />
+    <ClCompile Include="EditObjectTransform.cpp">
+      <Filter>Tool</Filter>
+    </ClCompile>
+    <ClCompile Include="UndoRedoActions.cpp">
+      <Filter>Tool</Filter>
+    </ClCompile>
+    <ClCompile Include="CopyPasteSystem.cpp">
+      <Filter>Tool</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DeviceResources.h">
@@ -115,7 +123,15 @@
     <ClInclude Include="Camera.h">
       <Filter>Tool</Filter>
     </ClInclude>
-    <ClInclude Include="EditObjectTransform.h" />
+    <ClInclude Include="EditObjectTransform.h">
+      <Filter>Tool</Filter>
+    </ClInclude>
+    <ClInclude Include="UndoRedoActions.h">
+      <Filter>Tool</Filter>
+    </ClInclude>
+    <ClInclude Include="CopyPasteSystem.h">
+      <Filter>Tool</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

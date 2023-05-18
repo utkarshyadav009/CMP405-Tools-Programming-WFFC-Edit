@@ -167,6 +167,7 @@
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ChunkObject.cpp" />
+    <ClCompile Include="CopyPasteSystem.cpp" />
     <ClCompile Include="DeviceResources.cpp" />
     <ClCompile Include="DisplayChunk.cpp" />
     <ClCompile Include="DisplayObject.cpp" />
@@ -181,10 +182,12 @@
     <ClCompile Include="SelectDialogue.cpp" />
     <ClCompile Include="sqlite3.c" />
     <ClCompile Include="ToolMain.cpp" />
+    <ClCompile Include="UndoRedoActions.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ChunkObject.h" />
+    <ClInclude Include="CopyPasteSystem.h" />
     <ClInclude Include="DeviceResources.h" />
     <ClInclude Include="DisplayChunk.h" />
     <ClInclude Include="DisplayObject.h" />
@@ -202,6 +205,7 @@
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="MFCMain.h" />
     <ClInclude Include="ToolMain.h" />
+    <ClInclude Include="UndoRedoActions.h" />
   </ItemGroup>
   <ItemGroup>
     <Media Include="database\data\Scene1.fbx">

@@ -4,10 +4,11 @@ An MMo style game editor which edits database content for educational purposes
 
 #Camera class 
 
-#Arcball Camera 
+#Copy/Paste
+
+#Undo/Redo
 
 #Object Selection
 
 #Object Manipulation
 
-#Terrain Manipulation 
